@@ -228,7 +228,7 @@ public class MainActivity extends Activity implements OnTouchListener, CvCameraV
                 // Show an explanation to the user *asynchronously* -- don't block
                 // this thread waiting for the user's response! After the user
                 // sees the explanation, try again to request the permission.
-                Toast.makeText(this,  "You should gib perm kthx", 10);
+                Toast.makeText(this,  "You should gib perm kthx", Toast.LENGTH_SHORT);
             } else {
 
                 // No explanation needed, we can request the permission.
