@@ -1,17 +1,8 @@
 package CameraCalibration.calibration;
 
 import android.util.Log;
-
 import org.opencv.calib3d.Calib3d;
-import org.opencv.core.Core;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfDouble;
-import org.opencv.core.MatOfPoint2f;
-import org.opencv.core.MatOfPoint3f;
-import org.opencv.core.Point;
-import org.opencv.core.Scalar;
-import org.opencv.core.Size;
+import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
@@ -21,18 +12,18 @@ public class CameraCalibrator {
     private static final String TAG = "CameraCalibrator";
 
     private final Size mPatternSize = new Size(4, 11);
-    private final int mCornersSize = (int)(mPatternSize.width * mPatternSize.height);
+    private final int mCornersSize = (int) (mPatternSize.width * mPatternSize.height);
     private boolean mPatternWasFound = false;
-    private MatOfPoint2f mCorners = new MatOfPoint2f();
-    private List<Mat> mCornersBuffer = new ArrayList<Mat>();
+    private final MatOfPoint2f mCorners = new MatOfPoint2f();
+    private final List<Mat> mCornersBuffer = new ArrayList<Mat>();
     private boolean mIsCalibrated = false;
 
-    private Mat mCameraMatrix = new Mat();
-    private Mat mDistortionCoefficients = new Mat();
-    private int mFlags;
+    private final Mat mCameraMatrix = new Mat();
+    private final Mat mDistortionCoefficients = new Mat();
+    private final int mFlags;
     private double mRms;
-    private double mSquareSize = 0.0181;
-    private Size mImageSize;
+    private final double mSquareSize = 0.0181;
+    private final Size mImageSize;
 
     public CameraCalibrator(int width, int height) {
         mImageSize = new Size(width, height);
@@ -81,7 +72,7 @@ public class CameraCalibrator {
 
     private void calcBoardCornerPositions(Mat corners) {
         final int cn = 3;
-        float positions[] = new float[mCornersSize * cn];
+        float[] positions = new float[mCornersSize * cn];
 
         for (int i = 0; i < mPatternSize.height; i++) {
             for (int j = 0; j < mPatternSize.width * cn; j += cn) {
@@ -101,7 +92,7 @@ public class CameraCalibrator {
         MatOfPoint2f cornersProjected = new MatOfPoint2f();
         double totalError = 0;
         double error;
-        float viewErrors[] = new float[objectPoints.size()];
+        float[] viewErrors = new float[objectPoints.size()];
 
         MatOfDouble distortionCoefficients = new MatOfDouble(mDistortionCoefficients);
         int totalPoints = 0;
@@ -113,7 +104,7 @@ public class CameraCalibrator {
 
             int n = objectPoints.get(i).rows();
             viewErrors[i] = (float) Math.sqrt(error * error / n);
-            totalError  += error * error;
+            totalError += error * error;
             totalPoints += n;
         }
         perViewErrors.create(objectPoints.size(), 1, CvType.CV_32FC1);

@@ -13,6 +13,17 @@
 
 package CameraCalibration;
 
+import CameraCalibration.calibration.*;
+import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.res.Resources;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.*;
+import android.view.View.OnTouchListener;
+import android.widget.Toast;
+import me.ngargi.engr100_vision.R;
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
@@ -21,59 +32,29 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Mat;
 
-import android.app.Activity;
-import android.app.ProgressDialog;
-import android.content.Intent;
-import android.content.res.Resources;
-import android.graphics.drawable.Drawable;
-import android.os.AsyncTask;
-import android.os.Bundle;
-import android.util.Log;
-import android.view.ActionProvider;
-import android.view.ContextMenu;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.MotionEvent;
-import android.view.SubMenu;
-import android.view.SurfaceView;
-import android.view.View;
-import android.view.View.OnTouchListener;
-import android.view.WindowManager;
-import android.widget.Toast;
-
-import CameraCalibration.calibration.CalibrationFrameRender;
-import CameraCalibration.calibration.CalibrationResult;
-import CameraCalibration.calibration.CameraCalibrator;
-import CameraCalibration.calibration.OnCameraFrameRender;
-import CameraCalibration.calibration.PreviewFrameRender;
-import me.ngargi.engr100_vision.R;
-
 public class CameraCalibrationActivity extends Activity implements CvCameraViewListener2, OnTouchListener {
+    //Add FilePath Name
+    public static final String DATA_FILEPATH = "/params.txt";
     private static final String TAG = "OCVSample::Activity";
-
     private CameraBridgeViewBase mOpenCvCameraView;
     private CameraCalibrator mCalibrator;
     private OnCameraFrameRender mOnCameraFrameRender;
     private int mWidth;
     private int mHeight;
-
-    //Add FilePath Name
-    public static final String DATA_FILEPATH = "/params.txt";
-
-    private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
+    private final BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
             switch (status) {
-            case LoaderCallbackInterface.SUCCESS:
-            {
-                Log.i(TAG, "OpenCV loaded successfully");
-                mOpenCvCameraView.enableView();
-                mOpenCvCameraView.setOnTouchListener(CameraCalibrationActivity.this);
-            } break;
-            default:
-            {
-                super.onManagerConnected(status);
-            } break;
+                case LoaderCallbackInterface.SUCCESS: {
+                    Log.i(TAG, "OpenCV loaded successfully");
+                    mOpenCvCameraView.enableView();
+                    mOpenCvCameraView.setOnTouchListener(CameraCalibrationActivity.this);
+                }
+                break;
+                default: {
+                    super.onManagerConnected(status);
+                }
+                break;
             }
         }
     };
@@ -90,23 +71,21 @@ public class CameraCalibrationActivity extends Activity implements CvCameraViewL
 
         setContentView(R.layout.camera_calibration_surface_view);
 
-        mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.camera_calibration_java_surface_view);
+        mOpenCvCameraView = findViewById(R.id.camera_calibration_java_surface_view);
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCvCameraView.setMaxFrameSize(1280, 960);
         mOpenCvCameraView.setCvCameraViewListener(this);
     }
 
     @Override
-    public void onPause()
-    {
+    public void onPause() {
         super.onPause();
         if (mOpenCvCameraView != null)
             mOpenCvCameraView.disableView();
     }
 
     @Override
-    public void onResume()
-    {
+    public void onResume() {
         super.onResume();
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_2, this, mLoaderCallback);
     }
@@ -126,7 +105,7 @@ public class CameraCalibrationActivity extends Activity implements CvCameraViewL
     }
 
     @Override
-    public boolean onPrepareOptionsMenu (Menu menu) {
+    public boolean onPrepareOptionsMenu(Menu menu) {
         super.onPrepareOptionsMenu(menu);
         menu.findItem(R.id.preview_mode).setEnabled(true);
         if (!mCalibrator.isCalibrated())
@@ -168,7 +147,7 @@ public class CameraCalibrationActivity extends Activity implements CvCameraViewL
                 mCalibrator.clearCorners();
                 mOnCameraFrameRender = new OnCameraFrameRender(new CalibrationFrameRender(mCalibrator));
                 String resultMessage = (mCalibrator.isCalibrated()) ?
-                        res.getString(R.string.calibration_successful)  + " " + mCalibrator.getAvgReprojectionError() :
+                        res.getString(R.string.calibration_successful) + " " + mCalibrator.getAvgReprojectionError() :
                         res.getString(R.string.calibration_unsuccessful);
                 (Toast.makeText(CameraCalibrationActivity.this, resultMessage, Toast.LENGTH_SHORT)).show();
 
@@ -183,15 +162,15 @@ public class CameraCalibrationActivity extends Activity implements CvCameraViewL
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-        case R.id.calibration:
-            mOnCameraFrameRender =
-                new OnCameraFrameRender(new CalibrationFrameRender(mCalibrator));
-            item.setChecked(true);
-            return true;
-        case R.id.calibrate:
-            calibrationize();
-        default:
-            return super.onOptionsItemSelected(item);
+            case R.id.calibration:
+                mOnCameraFrameRender =
+                        new OnCameraFrameRender(new CalibrationFrameRender(mCalibrator));
+                item.setChecked(true);
+                return true;
+            case R.id.calibrate:
+                calibrationize();
+            default:
+                return super.onOptionsItemSelected(item);
         }
     }
 
@@ -221,7 +200,7 @@ public class CameraCalibrationActivity extends Activity implements CvCameraViewL
 
         mCalibrator.addCorners();
         if (mCalibrator.getCornersBufferSize() > 15) {
-           calibrationize();
+            calibrationize();
         }
         return false;
     }

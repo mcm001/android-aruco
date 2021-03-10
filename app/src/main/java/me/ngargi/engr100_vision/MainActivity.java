@@ -1,264 +1,81 @@
 package me.ngargi.engr100_vision;
 
-import org.opencv.android.BaseLoaderCallback;
-import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
-import org.opencv.android.LoaderCallbackInterface;
-import org.opencv.android.OpenCVLoader;
-import org.opencv.core.Core;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfPoint;
-import org.opencv.core.Point;
-import org.opencv.core.Rect;
-import org.opencv.core.Scalar;
-import org.opencv.core.Size;
-import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
-import org.opencv.imgproc.Imgproc;
-
+import CameraCalibration.CameraCalibrationActivity;
+import android.Manifest;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.util.Log;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
+import android.view.*;
 import android.view.View.OnTouchListener;
-import android.view.SurfaceView;
 import android.widget.TextView;
-
-
+import android.widget.Toast;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
+import es.ava.aruco.CameraParameters;
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.CameraBridgeViewBase;
+import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
+import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
+import org.opencv.core.Scalar;
+import org.opencv.imgproc.Imgproc;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Vector;
-
-import CameraCalibration.CameraCalibrationActivity;
-import es.ava.aruco.CameraParameters;
-import es.ava.aruco.Marker;
-import es.ava.aruco.MarkerDetector;
-
-import static aruco.min3d.Min3d.TAG;
-//import static com.felhr.usbserial.SerialPortBuilder.ACTION_USB_PERMISSION;
-
 
 public class MainActivity extends Activity implements OnTouchListener, CvCameraViewListener2 {
-    private static final String  TAG              = "MainActivity";
-private String ACTION_USB_PERMISSION = "me.ngargi.engr100_vision.USB_PERMISSION";
-
-    private boolean              mIsColorSelected = false;
-    private Mat                  mRgba;
-    private Scalar               mBlobColorRgba;
-    private Scalar               mBlobColorHsv;
-    private Scalar               DRAW_COLOR;
-    private CameraParameters cameraParameters;
-    private VisionProcessThread visionProcess;
-    private Thread processThread;
-    private TextView text;
-
-    private UsbSerialDevice serialPort;
-    private UsbManager usbManager;
-    private UsbDevice device;
-    private UsbDeviceConnection connection;
+    public static final int SERVERPORT = 6000;
+    private static final String TAG = "MainActivity";
     UsbSerialInterface.UsbReadCallback mCallback = new UsbSerialInterface.UsbReadCallback() { //Defining a Callback which triggers whenever data is read.
         @Override
         public void onReceivedData(byte[] arg0) {
             String data = null;
-            try {
-                data = new String(arg0, "UTF-8");
-                data.concat("/n");
-                final String d = data;
+            data = new String(arg0, StandardCharsets.UTF_8);
+            data.concat("/n");
+            final String d = data;
 //                runOnUiThread(() -> text.append(d));
 
 
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
         }
     };
-
-    public static final int SERVERPORT = 6000;
-
-
-    private CameraBridgeViewBase mOpenCvCameraView;
-
-    private ServerSocket serverSocket;
-
     Handler updateConversationHandler;
-
     Thread serverThread = null;
-
-    private BaseLoaderCallback  mLoaderCallback = new BaseLoaderCallback(this) {
-        @Override
-        public void onManagerConnected(int status) {
-            switch (status) {
-                case LoaderCallbackInterface.SUCCESS:
-                {
-                    Log.i(TAG, "OpenCV loaded successfully");
-                    mOpenCvCameraView.enableView();
-                    mOpenCvCameraView.enableFpsMeter();
-                    mOpenCvCameraView.setOnTouchListener(MainActivity.this);
-                } break;
-                default:
-                {
-                    super.onManagerConnected(status);
-                } break;
-            }
-        }
-    };
-
-    public MainActivity() {
-        Log.i(TAG, "Instantiated new " + this.getClass());
-    }
-
-    /** Called when the activity is first created. */
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        updateConversationHandler = new Handler();
-        Log.i(TAG, "called onCreate");
-        super.onCreate(savedInstanceState);
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-        setContentView(R.layout.activity_main);
-
-        text = findViewById(R.id.textView);
-        mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.color_blob_detection_activity_surface_view);
-        mOpenCvCameraView.setMaxFrameSize(1280, 960);
-        mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
-        mOpenCvCameraView.setCvCameraViewListener(this);
-
-//        this.serverThread = new Thread(new ServerThread());
-//        this.serverThread.start();
-
-        serialPort = null;
-        usbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(ACTION_USB_PERMISSION);
-        filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
-        filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
-        registerReceiver(broadcastReceiver, filter);
-    }
-
-    @Override
-    public void onPause()
-    {
-        super.onPause();
-        if (mOpenCvCameraView != null)
-            mOpenCvCameraView.disableView();
-    }
-
-    @Override
-    public void onResume()
-    {
-        super.onResume();
-        if (!OpenCVLoader.initDebug()) {
-            Log.d(TAG, "Internal OpenCV library not found. Using OpenCV Manager for initialization");
-            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, mLoaderCallback);
-        } else {
-            Log.d(TAG, "OpenCV library found inside package. Using it!");
-            mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
-            cameraParameters = new CameraParameters();
-        cameraParameters.readFromFile(getApplicationContext().getFilesDir() + CameraCalibrationActivity.DATA_FILEPATH);
-            if (!cameraParameters.isValid()) {
-                calibrate(findViewById(R.id.content));
-            }
-            if (processThread != null) {
-                processThread.interrupt();
-            }
-            visionProcess = new VisionProcessThread(cameraParameters);
-            processThread = new Thread(visionProcess);
-            processThread.start();
-        }
-    }
-
-    public void onDestroy() {
-        super.onDestroy();
-        if (mOpenCvCameraView != null)
-            mOpenCvCameraView.disableView();
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        try {
-            serverSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void onCameraViewStarted(int width, int height) {
-        mRgba = new Mat(height, width, CvType.CV_8UC4);
-        DRAW_COLOR = new Scalar(255,0,0,255);
-    }
-
-    public void onCameraViewStopped() {
-        mRgba.release();
-    }
-
-    public boolean onTouch(View v, MotionEvent event) {
-    return true;
-    }
-
-    public void calibrate(View view) {
-        Intent i = new Intent(getApplicationContext(), CameraCalibrationActivity.class);
-        startActivity(i);
-    }
-
-    public void checkUSB(View view) {
-        // todo
-        HashMap usbDevices = usbManager.getDeviceList();
-        if (!usbDevices.isEmpty()) {
-            boolean keep = true;
-            for (Object entry : usbDevices.keySet()) {
-                device  = (UsbDevice) usbDevices.get(entry);
-                int deviceVID = device.getVendorId();
-                text.append(device.getDeviceName() + " - " +Integer.toString(deviceVID) + "\n\n");
-//                showDialog(MainActivity.this, "title", Integer.toString(deviceVID), "OK", "Cancel");
-                if (deviceVID == 0x1FFB)//Arduino Vendor ID
-                {
-                    PendingIntent pi = PendingIntent.getBroadcast(this, 0,
-                            new Intent(ACTION_USB_PERMISSION), 0);
-                    usbManager.requestPermission(device, pi);
-                    keep = false;
-                } else {
-                    connection = null;
-                    device = null;
-                }
-
-                if (!keep)
-                    break;
-            }
-        }
-    }
+    private final String ACTION_USB_PERMISSION = "me.ngargi.engr100_vision.USB_PERMISSION";
+    private final boolean mIsColorSelected = false;
+    private Mat mRgba;
+    private Scalar mBlobColorRgba;
+    private Scalar mBlobColorHsv;
+    private Scalar DRAW_COLOR;
+    private CameraParameters cameraParameters;
+    private VisionProcessThread visionProcess;
+    private Thread processThread;
+    private TextView text;
+    private UsbSerialDevice serialPort;
+    private UsbManager usbManager;
+    private UsbDevice device;
+    private UsbDeviceConnection connection;
 
     private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() { //Broadcast Receiver to automatically start and stop the Serial connection.
         @Override
@@ -302,18 +119,211 @@ private String ACTION_USB_PERMISSION = "me.ngargi.engr100_vision.USB_PERMISSION"
             } else if (intent.getAction().equals(UsbManager.ACTION_USB_DEVICE_DETACHED)) {
 //                onClickStop(stopButton);
             }
-        };
+        }
+
     };
 
+    private CameraBridgeViewBase mOpenCvCameraView;
+    private ServerSocket serverSocket;
+
+    private final BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
+        @Override
+        public void onManagerConnected(int status) {
+            switch (status) {
+                case LoaderCallbackInterface.SUCCESS: {
+                    Log.i(TAG, "OpenCV loaded successfully");
+                    mOpenCvCameraView.enableView();
+                    mOpenCvCameraView.enableFpsMeter();
+                    mOpenCvCameraView.setOnTouchListener(MainActivity.this);
+                }
+                break;
+                default: {
+                    super.onManagerConnected(status);
+                }
+                break;
+            }
+        }
+    };
+
+    public MainActivity() {
+        Log.i(TAG, "Instantiated new " + this.getClass());
+    }
+
+    public static String getIpAddress(Context context) {
+        WifiManager wifiManager = (WifiManager) context.getApplicationContext()
+                .getSystemService(WIFI_SERVICE);
+
+        String ipAddress = intToInetAddress(wifiManager.getDhcpInfo().ipAddress).toString();
+
+        ipAddress = ipAddress.substring(1);
+
+        return ipAddress;
+    }
+
+    public static InetAddress intToInetAddress(int hostAddress) throws AssertionError {
+        byte[] addressBytes = {(byte) (0xff & hostAddress),
+                (byte) (0xff & (hostAddress >> 8)),
+                (byte) (0xff & (hostAddress >> 16)),
+                (byte) (0xff & (hostAddress >> 24))};
+
+        try {
+            return InetAddress.getByAddress(addressBytes);
+        } catch (UnknownHostException e) {
+            throw new AssertionError();
+        }
+    }
+
+    /**
+     * Called when the activity is first created.
+     */
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        updateConversationHandler = new Handler();
+        Log.i(TAG, "called onCreate");
+        super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+        setContentView(R.layout.activity_main);
+
+        text = findViewById(R.id.textView);
+        mOpenCvCameraView = findViewById(R.id.color_blob_detection_activity_surface_view);
+        mOpenCvCameraView.setMaxFrameSize(1280, 960);
+        mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
+        mOpenCvCameraView.setCvCameraViewListener(this);
+
+//        this.serverThread = new Thread(new ServerThread());
+//        this.serverThread.start();
+
+        serialPort = null;
+        usbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(ACTION_USB_PERMISSION);
+        filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
+        filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
+        registerReceiver(broadcastReceiver, filter);
+
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (mOpenCvCameraView != null)
+            mOpenCvCameraView.disableView();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Give first an explanation, if needed.
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.CAMERA)) {
+
+                // Show an explanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+                Toast.makeText(this,  "You should gib perm kthx", 10);
+            } else {
+
+                // No explanation needed, we can request the permission.
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.CAMERA},
+                        1);
+            }
+        }
+
+
+        if (!OpenCVLoader.initDebug()) {
+            Log.d(TAG, "Internal OpenCV library not found. Using OpenCV Manager for initialization");
+            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, mLoaderCallback);
+        } else {
+            Log.d(TAG, "OpenCV library found inside package. Using it!");
+            mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
+            cameraParameters = new CameraParameters();
+            cameraParameters.readFromFile(getApplicationContext().getFilesDir() + CameraCalibrationActivity.DATA_FILEPATH);
+            if (!cameraParameters.isValid()) {
+                calibrate(findViewById(R.id.content));
+            }
+            if (processThread != null) {
+                processThread.interrupt();
+            }
+            visionProcess = new VisionProcessThread(cameraParameters);
+            processThread = new Thread(visionProcess);
+            processThread.start();
+        }
+    }
+
+    public void onDestroy() {
+        super.onDestroy();
+        if (mOpenCvCameraView != null)
+            mOpenCvCameraView.disableView();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        try {
+            if (serverSocket != null) serverSocket.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void onCameraViewStarted(int width, int height) {
+        mRgba = new Mat(height, width, CvType.CV_8UC4);
+        DRAW_COLOR = new Scalar(255, 0, 0, 255);
+    }
+
+    public void onCameraViewStopped() {
+        mRgba.release();
+    }
+
+    public boolean onTouch(View v, MotionEvent event) {
+        return true;
+    }
+
+    public void calibrate(View view) {
+        Intent i = new Intent(getApplicationContext(), CameraCalibrationActivity.class);
+        startActivity(i);
+    }
+
+    public void checkUSB(View view) {
+        // todo
+        HashMap usbDevices = usbManager.getDeviceList();
+        if (!usbDevices.isEmpty()) {
+            boolean keep = true;
+            for (Object entry : usbDevices.keySet()) {
+                device = (UsbDevice) usbDevices.get(entry);
+                int deviceVID = device.getVendorId();
+                text.append(device.getDeviceName() + " - " + deviceVID + "\n\n");
+//                showDialog(MainActivity.this, "title", Integer.toString(deviceVID), "OK", "Cancel");
+                if (deviceVID == 0x1FFB)//Arduino Vendor ID
+                {
+                    PendingIntent pi = PendingIntent.getBroadcast(this, 0,
+                            new Intent(ACTION_USB_PERMISSION), 0);
+                    usbManager.requestPermission(device, pi);
+                    keep = false;
+                } else {
+                    connection = null;
+                    device = null;
+                }
+
+                if (!keep)
+                    break;
+            }
+        }
+    }
+
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
-        long t = System.currentTimeMillis();
         mRgba = inputFrame.rgba();
         visionProcess.setInput(mRgba);
         visionProcess.getOutput(mRgba);
-//        runOnUiThread();
-        Thread a = new Thread(new sendSerialThread(getBaseContext(), visionProcess.getSerialBytes(), serialPort));
-        a.start();
-        runOnUiThread(new updateUIThread(visionProcess.getPositionStr()));
         return mRgba;
     }
 
@@ -344,7 +354,7 @@ private String ACTION_USB_PERMISSION = "me.ngargi.engr100_vision.USB_PERMISSION"
                     new Thread(commThread).start();
 
                 } catch (IOException e) {
-                   // e.printStackTrace();
+                    // e.printStackTrace();
                 }
             }
         }
@@ -352,7 +362,7 @@ private String ACTION_USB_PERMISSION = "me.ngargi.engr100_vision.USB_PERMISSION"
 
     class CommunicationThread implements Runnable {
 
-        private Socket clientSocket;
+        private final Socket clientSocket;
 
         private BufferedReader input;
 
@@ -394,11 +404,12 @@ private String ACTION_USB_PERMISSION = "me.ngargi.engr100_vision.USB_PERMISSION"
 
     }
 
-    class sendSerialThread implements Runnable {
-        private UsbSerialDevice serial;
+    class SerialThread implements Runnable {
+        private final UsbSerialDevice serial;
         private VisionProcessThread visionProcess;
-        private byte[] bytes;
-        public sendSerialThread(Context ctx, byte[] toSend, UsbSerialDevice s) {
+        private final byte[] bytes;
+
+        public SerialThread(Context ctx, byte[] toSend, UsbSerialDevice s) {
             this.serial = s;
             this.bytes = toSend;
 
@@ -414,7 +425,7 @@ private String ACTION_USB_PERMISSION = "me.ngargi.engr100_vision.USB_PERMISSION"
     }
 
     class updateUIThread implements Runnable {
-        private String msg;
+        private final String msg;
 
         public updateUIThread(String str) {
             this.msg = str;
@@ -424,30 +435,6 @@ private String ACTION_USB_PERMISSION = "me.ngargi.engr100_vision.USB_PERMISSION"
         public void run() {
 //            msg += "\n Local IP: " + getIpAddress(getApplicationContext());
 //            text.setText(msg);
-        }
-    }
-
-    public static String getIpAddress(Context context) {
-        WifiManager wifiManager = (WifiManager) context.getApplicationContext()
-                .getSystemService(WIFI_SERVICE);
-
-        String ipAddress = intToInetAddress(wifiManager.getDhcpInfo().ipAddress).toString();
-
-        ipAddress = ipAddress.substring(1);
-
-        return ipAddress;
-    }
-
-    public static InetAddress intToInetAddress(int hostAddress) throws AssertionError{
-        byte[] addressBytes = { (byte)(0xff & hostAddress),
-                (byte)(0xff & (hostAddress >> 8)),
-                (byte)(0xff & (hostAddress >> 16)),
-                (byte)(0xff & (hostAddress >> 24)) };
-
-        try {
-            return InetAddress  .getByAddress(addressBytes);
-        } catch (UnknownHostException e) {
-            throw new AssertionError();
         }
     }
 }

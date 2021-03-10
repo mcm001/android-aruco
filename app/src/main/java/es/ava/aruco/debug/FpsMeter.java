@@ -1,23 +1,21 @@
 package es.ava.aruco.debug;
 
-import java.text.DecimalFormat;
-
-import org.opencv.core.Core;
-
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.util.Log;
+import org.opencv.core.Core;
+
+import java.text.DecimalFormat;
 
 public class FpsMeter {
-    private static final String TAG       = "Sample::FpsMeter";
-    int                         step;
-    int                         framesCouner;
-    double                      freq;
-    long                        prevFrameTime;
-    String                      strfps;
-    DecimalFormat               twoPlaces = new DecimalFormat("0.00");
-    Paint                       paint;
+    private static final String TAG = "Sample::FpsMeter";
+    int step;
+    int framesCouner;
+    double freq;
+    long prevFrameTime;
+    String strfps;
+    DecimalFormat twoPlaces = new DecimalFormat("0.00");
+    Paint paint;
 
     public void init() {
         step = 20;

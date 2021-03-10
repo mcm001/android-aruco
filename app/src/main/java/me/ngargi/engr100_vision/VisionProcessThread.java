@@ -1,39 +1,30 @@
 package me.ngargi.engr100_vision;
 
-import android.content.Context;
-import android.hardware.usb.UsbDeviceConnection;
-import android.hardware.usb.UsbManager;
-import android.net.wifi.WifiManager;
 import android.util.Log;
-
-import org.opencv.core.Core;
-import org.opencv.core.Mat;
-import org.opencv.core.Point;
-import org.opencv.core.Scalar;
+import es.ava.aruco.CameraParameters;
+import es.ava.aruco.Marker;
+import es.ava.aruco.MarkerDetector;
+import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.utils.Converters;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import es.ava.aruco.CameraParameters;
-import es.ava.aruco.Marker;
-import es.ava.aruco.MarkerDetector;
-//import com.hoho.android.usbserial.*;
-//import com.hoho.android.usbserial.driver.UsbSerialDriver;
-//import com.hoho.android.usbserial.driver.UsbSerialProber;
-//import com.hoho.android.usbserial.driver.UsbSerialDriver;
-
-
-import static android.content.Context.WIFI_SERVICE;
 import static aruco.min3d.Min3d.TAG;
 
 public class VisionProcessThread implements Runnable {
+    private final Lock inmatlock = new ReentrantLock(true);
+    public Mat input;
+    public Mat output;
+    public boolean exit = false;
+    private final CameraParameters cameraParameters;
+    private final Vector<Marker> detectedMarkers;
+    private final Lock markerLock = new ReentrantLock(false);
+    private final Lock outmatlock = new ReentrantLock(true);
+    private final MarkerDetector mDetector;
+    private byte[] lastSerialData;
     public VisionProcessThread(CameraParameters cp) {
         cameraParameters = cp;
         input = new Mat();
@@ -45,18 +36,6 @@ public class VisionProcessThread implements Runnable {
 //        mDetector.setThresholdParams(9,9);
 //        mDetector.setThresholdMethod(MarkerDetector.thresSuppMethod.CANNY);
     }
-
-    private final Lock inmatlock = new ReentrantLock(true);
-    private CameraParameters cameraParameters;
-    public Mat input;
-    private Vector<Marker> detectedMarkers;
-    private Lock markerLock = new ReentrantLock(false);
-    public Mat output;
-    private Lock outmatlock = new ReentrantLock(true);
-    public boolean exit = false;
-    private MarkerDetector mDetector;
-    private byte[] lastSerialData;
-
 
     public void setInput(Mat frame) {
         inmatlock.lock();
@@ -127,7 +106,7 @@ public class VisionProcessThread implements Runnable {
 
             byte x_byte = (byte) (255 - (int) (127 + (hori_rad / 6.28 * 255)));
             byte y_byte = (byte) (int) (vert_rad / 6.28 * 255);
-            lastSerialData = new byte[] {x_byte, y_byte};
+            lastSerialData = new byte[]{x_byte, y_byte};
         }
         return lastSerialData;
     }
@@ -146,22 +125,28 @@ public class VisionProcessThread implements Runnable {
             if (cameraParameters.isValid()) {
                 long dt = System.currentTimeMillis();
                 markerLock.lock();
+//                mDetector.detect(mRgba, detectedMarkers, cameraParameters, 0.1f);
                 mDetector.detect(mRgba, detectedMarkers, cameraParameters, 0.1f);
+
+//                mRgba.convertTo(mRgba, CvType.CV_8UC3);
+//                Core.rotate(mRgba, mRgba, Core.ROTATE_90_CLOCKWISE);
+//                mRgba.convertTo(mRgba, CvType.CV_8UC4);
+
                 Log.e(TAG, "Detection Time: " + (System.currentTimeMillis() - dt));
-                Log.e(TAG, mRgba.width() + " by " + mRgba.height() );
+                Log.e(TAG, mRgba.width() + " by " + mRgba.height());
 
 
                 for (Marker m : detectedMarkers) {
-                    m.draw(mRgba, new Scalar(255, 0, 0), 2, true);
                     m.draw3dAxis(mRgba, cameraParameters, new Scalar(0, 255, 0));
                     m.draw3dCube(mRgba, cameraParameters, new Scalar(0, 255, 0));
+                    m.draw(mRgba, new Scalar(255, 0, 0), 2, true);
                 }
                 markerLock.unlock();
 
 
                 Log.e(TAG, "Marker count: " + detectedMarkers.size());
             } else {
-                Imgproc.putText(mRgba, "Invalid Camera Parameters", new Point(mRgba.width()/4, mRgba.height()/2), Core.FONT_HERSHEY_SIMPLEX, 2, new Scalar(0, 255, 0));
+                Imgproc.putText(mRgba, "Invalid Camera Parameters", new Point(mRgba.width() / 4, mRgba.height() / 2), Core.FONT_HERSHEY_SIMPLEX, 2, new Scalar(0, 255, 0));
             }
 //            Imgproc.putText(mRgba, ""+FPS, new Point(10, 10), Core.FONT_HERSHEY_SIMPLEX, 1, new Scalar(0, 255, 0));
             outmatlock.lock();
