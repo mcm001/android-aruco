@@ -54,7 +54,7 @@ dependencies {
 
     implementation 'com.quickbirdstudios:opencv:3.4.4-contrib'
 
-    implementation project('ftc265-lib')
+    implementation project(':ftc265-lib')
     implementation 'com.arcrobotics:ftclib:1.1.6' // For geometry classes
 
 //    implementation "edu.wpi.first.wpimath:wpimath-java:$wpilibVersion"
