@@ -23,7 +23,7 @@ import android.util.Log;
 import android.view.*;
 import android.view.View.OnTouchListener;
 import android.widget.Toast;
-import me.ngargi.engr100_vision.R;
+import com.mcm.arucomemes.R;
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;

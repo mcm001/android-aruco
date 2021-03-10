@@ -6,12 +6,20 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 28
+    ndkVersion "21.0.6113669"
+
     defaultConfig {
-        applicationId "me.ngargi.engr100_vision"
+        applicationId "com.mcm.arucomemes"
         minSdkVersion 24
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
+
+        ndk {
+            // Specifies the ABI configurations of your native
+            // libraries Gradle should build and package with your APK.
+            abiFilters 'armeabi-v7a'
+        }
     }
     buildTypes {
         release {
@@ -24,11 +32,11 @@ android {
         sourceCompatibility 1.8
         targetCompatibility 1.8
     }
-//    externalNativeBuild {
-//        cmake {
-//            path file('src/main/cpp/CMakeLists.txt')
-//        }
-//    }
+    externalNativeBuild {
+        cmake {
+            path file('CMakeLists.txt')
+        }
+    }
 
 }
 
@@ -54,8 +62,11 @@ dependencies {
 
     implementation 'com.quickbirdstudios:opencv:3.4.4-contrib'
 
-    implementation project(':ftc265-lib')
+//    implementation project(':ftc265-lib')
+//    implementation 'com.arcrobotics:ftclib:1.1.6' // For geometry classes
+
     implementation 'com.arcrobotics:ftclib:1.1.6' // For geometry classes
+    implementation 'org.ejml:ejml-all:0.40'
 
 //    implementation "edu.wpi.first.wpimath:wpimath-java:$wpilibVersion"
 //    implementation "edu.wpi.first.wpimath:wpimath-jni:$wpilibVersion"

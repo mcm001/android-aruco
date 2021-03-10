@@ -6,7 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.util.Log;
-import me.ngargi.engr100_vision.MainActivity;
+import com.mcm.arucomemes.MainActivity;
 import org.opencv.core.Mat;
 
 import java.io.File;
