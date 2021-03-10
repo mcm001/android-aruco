@@ -30,17 +30,6 @@
             tools:layout_editor_absoluteX="0dp"
             tools:layout_editor_absoluteY="0dp" />
 
-        <TextView
-            android:id="@+id/textView"
-            android:layout_width="119dp"
-            android:layout_height="78dp"
-            android:background="@drawable/text_background"
-            android:text="TextView"
-            tools:layout_conversion_absoluteHeight="178dp"
-            tools:layout_conversion_absoluteWidth="163dp"
-            tools:layout_editor_absoluteX="200dp"
-            tools:layout_editor_absoluteY="0dp" />
-
         <Button
             android:id="@+id/usb_button"
             android:layout_width="wrap_content"
