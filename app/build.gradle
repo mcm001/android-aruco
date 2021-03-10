@@ -8,7 +8,7 @@ android {
     compileSdkVersion 28
     defaultConfig {
         applicationId "me.ngargi.engr100_vision"
-        minSdkVersion 23
+        minSdkVersion 24
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
@@ -53,6 +53,9 @@ dependencies {
     implementation 'com.github.felHR85:UsbSerial:6.0.5'
 
     implementation 'com.quickbirdstudios:opencv:3.4.4-contrib'
+
+    implementation project('ftc265-lib')
+    implementation 'com.arcrobotics:ftclib:1.1.6' // For geometry classes
 
 //    implementation "edu.wpi.first.wpimath:wpimath-java:$wpilibVersion"
 //    implementation "edu.wpi.first.wpimath:wpimath-jni:$wpilibVersion"

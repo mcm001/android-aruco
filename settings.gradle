@@ -1,2 +1,3 @@
 include ':app', ':usbserial-6.0.5-release'
 //include ':openCVLibrary341'
+include ':ftc265-lib'
