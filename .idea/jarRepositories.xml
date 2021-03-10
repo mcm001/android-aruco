@@ -42,26 +42,6 @@
       <option name="url" value="file:/$PROJECT_DIR$/../../Android/SDK/extras/google/m2repository" />
     </remote-repository>
     <remote-repository>
-      <option name="id" value="Local-Release" />
-      <option name="name" value="Local-Release" />
-      <option name="url" value="file:/$USER_HOME$/releases/maven/release/" />
-    </remote-repository>
-    <remote-repository>
-      <option name="id" value="Remote-Release" />
-      <option name="name" value="Remote-Release" />
-      <option name="url" value="https://frcmaven.wpi.edu/artifactory/release" />
-    </remote-repository>
-    <remote-repository>
-      <option name="id" value="Remote-Development" />
-      <option name="name" value="Remote-Development" />
-      <option name="url" value="https://frcmaven.wpi.edu/artifactory/development" />
-    </remote-repository>
-    <remote-repository>
-      <option name="id" value="Local-Development" />
-      <option name="name" value="Local-Development" />
-      <option name="url" value="file:/$USER_HOME$/releases/maven/development/" />
-    </remote-repository>
-    <remote-repository>
       <option name="id" value="maven2" />
       <option name="name" value="maven2" />
       <option name="url" value="https://frcmaven.wpi.edu:443/artifactory/release" />
